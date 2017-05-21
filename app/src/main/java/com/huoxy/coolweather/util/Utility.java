@@ -3,9 +3,11 @@ package com.huoxy.coolweather.util;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.gson.Gson;
 import com.huoxy.coolweather.db.City;
 import com.huoxy.coolweather.db.County;
 import com.huoxy.coolweather.db.Province;
+import com.huoxy.coolweather.gson.Weather;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -97,5 +99,23 @@ public class Utility {
             }
         }
         return false;
+    }
+
+    /**
+     * 处理天气接口返回的数据
+     * @param response 天气响应
+     * @return 天气实体
+     */
+    public static Weather handleWeatherResponse(String response){
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather");
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(weatherContent, Weather.class);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }
