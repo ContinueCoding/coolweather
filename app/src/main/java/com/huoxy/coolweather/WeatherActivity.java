@@ -7,17 +7,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.huoxy.coolweather.gson.Forecast;
 import com.huoxy.coolweather.gson.Weather;
 import com.huoxy.coolweather.util.HttpUtil;
 import com.huoxy.coolweather.util.Utility;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -25,8 +29,11 @@ import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
 
+    public static final String KEY_BING_PIC = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     public static final String KEY_WEATHER = "weather";
     public static final String KEY_WEATHER_ID = "weather_id";
+
+    private ImageView bingPic;
 
     private ScrollView weatherLayout;
     private TextView titleCity;
@@ -43,6 +50,9 @@ public class WeatherActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        setActionBarTransparent();
+
         setContentView(R.layout.activity_weather);
 
         initViews();
@@ -61,9 +71,29 @@ public class WeatherActivity extends AppCompatActivity {
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
+
+        String bingPicUrl = preferences.getString(KEY_BING_PIC, null);
+        if(!TextUtils.isEmpty(bingPicUrl)){
+            Glide.with(this).load(bingPicUrl).into(bingPic);
+        }else{
+            loadBingPic();
+        }
+    }
+
+    //设置背景图和状态栏融合效果简便方式
+    private void setActionBarTransparent(){
+        /*if(Build.VERSION.SDK_INT >= 21){
+            View decorView = getWindow().getDecorView();
+            //改变系统UI显示：使页面布局显示在状态栏上
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN |
+                                            View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            //使状态栏透明
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }*/
     }
 
     private void initViews(){
+        bingPic = (ImageView) findViewById(R.id.bing_pic);
         weatherLayout = (ScrollView) findViewById(R.id.weather_layout);
         titleCity = (TextView) findViewById(R.id.title_city);
         titleUpdateTime = (TextView) findViewById(R.id.title_update_time);
@@ -143,4 +173,27 @@ public class WeatherActivity extends AppCompatActivity {
         weatherLayout.setVisibility(View.VISIBLE);
     }
 
+    private void loadBingPic(){
+        String requestBingUrl = "http://guolin.tech/api/bing_pic";
+        HttpUtil.sendOkHttpRequest(requestBingUrl, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String bingPicUrl = response.body().string();
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+                editor.putString(KEY_BING_PIC, bingPicUrl);
+                editor.apply();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Glide.with(WeatherActivity.this).load(bingPicUrl).into(bingPic);
+                    }
+                });
+            }
+        });
+    }
 }
