@@ -1,9 +1,9 @@
 package com.huoxy.coolweather;
 
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,16 +47,17 @@ public class WeatherActivity extends AppCompatActivity {
 
         initViews();
 
+        String weatherId = getIntent().getStringExtra(KEY_WEATHER_ID);
+
         //使用当前应用程序的包名作为前缀来命名文件
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        String weatherString = preferences.getString(KEY_WEATHER, null);
+        String weatherString = preferences.getString(weatherId, null);
         if(!TextUtils.isEmpty(weatherString)){
             //cache
             Weather weather = Utility.handleWeatherResponse(weatherString);
             showWeather(weather);
         }else {
             //network server
-            String weatherId = getIntent().getStringExtra(KEY_WEATHER_ID);
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
@@ -76,7 +77,7 @@ public class WeatherActivity extends AppCompatActivity {
         sportText = (TextView) findViewById(R.id.sport_text);
     }
 
-    public void requestWeather(String weatherId){
+    public void requestWeather(final String weatherId){
         String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherId + "&key=b2d4804bb2054396a225ca2cf896dafe";
         HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
             @Override
@@ -91,14 +92,14 @@ public class WeatherActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                final String responseText = response.body().toString();
+                final String responseText = response.body().string();
                 final Weather weather = Utility.handleWeatherResponse(responseText);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         if(weather != null && "ok".equalsIgnoreCase(weather.status)){
                             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
-                            editor.putString(KEY_WEATHER, responseText);
+                            editor.putString(weatherId, responseText);
                             editor.apply();
                             showWeather(weather);
                         }else{

@@ -1,6 +1,7 @@
 package com.huoxy.coolweather;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -53,7 +54,7 @@ public class ChooseAreaFragment extends Fragment {
 
     private Province selectedProvince;
     private City selectedCity;
-    private int currentLevel;
+    public int currentLevel;
 
     public ChooseAreaFragment() {
         // Required empty public constructor
@@ -102,6 +103,11 @@ public class ChooseAreaFragment extends Fragment {
                 }else if(currentLevel == LEVEL_CITY){
                     selectedCity = cityList.get(position);
                     queryCounties();
+                }else if(currentLevel == LEVEL_COUNTY){
+                    String weatherId = countyList.get(position).getWeatherId();
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra(WeatherActivity.KEY_WEATHER_ID, weatherId);
+                    startActivity(intent);
                 }
             }
         });
